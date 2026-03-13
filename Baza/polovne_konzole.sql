@@ -11,7 +11,8 @@ create table korisnik (
 	korisnik_email nvarchar(20),
 	korisnik_loz nvarchar(20),
 	korisnik_telefon nvarchar(20),
-	korisnik_racun nvarchar(30)
+	korisnik_racun nvarchar(30),
+	korisnik_status nvarchar(20)
 )
 
 go
@@ -43,6 +44,22 @@ create table oglas (
     opis nvarchar(400),
     datum_objave date,
     starost_u_mesecima int
+)
+
+go
+
+create table oglas_audit (
+    oglas_id int PRIMARY KEY IDENTITY(1,1),
+    konzola_id int,
+	korisnik_id int,
+    cena int,
+    garancija int,
+    stanje nvarchar(50),
+    opis nvarchar(400),
+    datum_objave date,
+    starost_u_mesecima int,
+	akcija nvarchar(10),
+	vreme_akcije datetime default getdate()
 )
 
 go
@@ -281,3 +298,39 @@ end try
 begin catch
 	return @@error
 end catch
+
+go
+
+create trigger trigger_oglas_insert
+on oglas
+after insert
+as
+begin
+    insert into oglas_audit(oglas_id, konzola_id, korisnik_id, cena, garancija, stanje, opis, datum_objave, starost_u_mesecima, akcija)
+    select oglas_id, konzola_id, korisnik_id, cena, garancija, stanje, opis, datum_objave, starost_u_mesecima, 'insert'
+    from inserted
+end
+
+go
+
+create trigger trigger_oglas_update
+on oglas
+after update
+as
+begin
+    insert into oglas_audit(oglas_id, konzola_id, korisnik_id, cena, garancija, stanje, opis, datum_objave, starost_u_mesecima, akcija)
+    select oglas_id, konzola_id, korisnik_id, cena, garancija, stanje, opis, datum_objave, starost_u_mesecima, 'update'
+    from inserted
+end
+
+go
+
+create trigger trigger_oglas_delete
+on oglas
+after delete
+as
+begin
+    insert into oglas_audit(oglas_id, konzola_id, korisnik_id, cena, garancija, stanje, opis, datum_objave, starost_u_mesecima, akcija)
+    select oglas_id, konzola_id, korisnik_id, cena, garancija, stanje, opis, datum_objave, starost_u_mesecima, 'delete'
+    from deleted
+end
